@@ -1,0 +1,25 @@
+
+name: check-bugbug-test-result
+
+on:
+  repository_dispatch:
+    types: [bugbug-test-completed]
+
+jobs:
+  check-bugbug-test-result:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check test results from BugBug
+        run: |
+          response=$(curl -X GET "https://api.bugbug.io/v1/tests/results/276dc705-f1a7-4758-b8d0-6ff8038bbeca" \
+            -H "Authorization: Bearer 69440165985146e828a7b195404be2b10b0b273d")
+          status=$(echo "$response" | jq -r '.status')
+          echo "Received status: $status"
+          if [[ "$status" == "passed" ]]; then
+            echo "Tests passed!"
+            exit 0
+          elif [[ "$status" == "failed" ]]; then
+            echo "Tests failed!"
+            exit 1
+          fi
