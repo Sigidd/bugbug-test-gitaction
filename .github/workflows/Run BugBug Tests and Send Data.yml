@@ -38,17 +38,27 @@ jobs:
       # Esegue BugBug test e salva gli ID di esecuzione
       - name: Run BugBug Tests
         id: bugbug_test
-        continue-on-error: true  # Permette al workflow di continuare anche se fallisce
-        uses: bugbug-io/bugbug-github-action@v1.2.1
-        with:
-          apiToken: '69440165985146e828a7b195404be2b10b0b273d'
-          suiteId: '72e6a1df-0e04-4c32-8db5-d10a39542352'
-          debug: 'true'
+        run: |
+         set +e  # Allow errors without stopping the workflow
+         bugbug_output=$(bugbug-io/bugbug-github-action@v1.2.1 \
+          --apiToken '${{ secrets.BUGBUG_API_TOKEN }}' \
+          --suiteId '72e6a1df-0e04-4c32-8db5-d10a39542352' \
+          --debug 'true' \
+     
+    
+          echo "$bugbug_output"
+    
+          EXIT_CODE=$?  # Store the exit code
+          echo "BUGBUG_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV  # Save it for later
+    
+          exit 0  # Force success (for now)
         
 
       # Invio dati a un endpoint
       - name: Send Data to Webhook
+        if: always()  # Ensure it runs no matter what
         run: |
+      
           curl -X POST "https://hook.eu1.make.com/i46n7r41xhkxw1wz4uikk6vevrsvbfev" \
           -H "Content-Type: application/json" \
           -d '{
@@ -63,3 +73,8 @@ jobs:
             "bugbug_suite_run_id": "${{ steps.bugbug_test.outputs.suiteRunId }}",
             "bugbug_test_run_id": "${{ steps.bugbug_test.outputs.testRunId }}"
           }'
+
+
+      - name: Fail Job if BugBug Failed
+        if: env.BUGBUG_EXIT_CODE != '0'
+        run: exit 1  # Force failure
