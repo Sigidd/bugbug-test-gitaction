@@ -58,8 +58,8 @@ jobs:
         
         run: |
       
-          curl -X POST "https://hook.eu1.make.com/i46n7r41xhkxw1wz4uikk6vevrsvbfev" 
-          -H "Content-Type: application/json" 
+          curl -X POST "https://hook.eu1.make.com/i46n7r41xhkxw1wz4uikk6vevrsvbfev" \
+          -H "Content-Type: application/json" \
           -d '{
             "branch_name": "${{ env.BRANCH_NAME }}",
             "repo_name": "${{ env.REPO_NAME }}",
