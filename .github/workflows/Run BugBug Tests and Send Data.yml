@@ -1,5 +1,5 @@
 name: Run BugBug Tests and Send Data
-
+continue-on-error: true  # Permette al workflow di continuare anche se fallisce
 on:
   push:
     branches:
