@@ -21,6 +21,8 @@ jobs:
         id: pr_info
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "BRANCH_NAME=${{ github.head_ref }}" >> $GITHUB_ENV
+            echo "REPO_NAME=${{ github.repository }}" >> $GITHUB_ENV
             echo "PR_TITLE=$(jq -r .pull_request.title $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
             echo "PR_NUMBER=$(jq -r .pull_request.number $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
             echo "PR_AUTHOR=$(jq -r .pull_request.user.login $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
