@@ -23,4 +23,4 @@
         uses: bugbug-io/bugbug-github-action@v1.2.1
         with:
           apiToken: '69440165985146e828a7b195404be2b10b0b273d'
-          testId: '276dc705-f1a7-4758-b8d0-6ff8038bbeca'
+          suiteId: '72e6a1df-0e04-4c32-8db5-d10a39542352'
