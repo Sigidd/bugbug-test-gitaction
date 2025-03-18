@@ -16,51 +16,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Recupera info PR o Push
       - name: Get PR/Push Info
         id: pr_info
         run: |
+          echo "BRANCH_NAME=${{ github.head_ref || github.ref_name }}" >> $GITHUB_ENV
+          echo "REPO_NAME=${{ github.repository }}" >> $GITHUB_ENV
+          echo "EVENT_TYPE=${{ github.event_name }}" >> $GITHUB_ENV
+
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            echo "BRANCH_NAME=${{ github.head_ref }}" >> $GITHUB_ENV
-            echo "REPO_NAME=${{ github.repository }}" >> $GITHUB_ENV
-            echo "PR_TITLE=$(jq -r .pull_request.title $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
-            echo "PR_NUMBER=$(jq -r .pull_request.number $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
-            echo "PR_AUTHOR=$(jq -r .pull_request.user.login $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
-            echo "PR_URL=$(jq -r .pull_request.html_url $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
-            echo "EVENT_TYPE=pull_request" >> $GITHUB_ENV
+            echo "PR_TITLE=${{ github.event.pull_request.title }}" >> $GITHUB_ENV
+            echo "PR_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+            echo "PR_AUTHOR=${{ github.event.pull_request.user.login }}" >> $GITHUB_ENV
+            echo "PR_URL=${{ github.event.pull_request.html_url }}" >> $GITHUB_ENV
           else
             echo "COMMIT_MESSAGE=$(git log -1 --pretty=%B)" >> $GITHUB_ENV
             echo "COMMIT_AUTHOR=$(git log -1 --pretty=%an)" >> $GITHUB_ENV
             echo "COMMIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
-            echo "EVENT_TYPE=push" >> $GITHUB_ENV
           fi
 
-      # Esegue BugBug test e salva gli ID di esecuzione
       - name: Run BugBug Tests
-        continue-on-error: true  # Permette di continuare anche se fallisce
-        id: run-bugbug-tests
+        id: bugbug_test
+        continue-on-error: true
         uses: bugbug-io/bugbug-github-action@v1.2.1
-        with: 
-         
-        
-           apiToken: '69440165985146e828a7b195404be2b10b0b273d' 
-           suiteId: '72e6a1df-0e04-4c32-8db5-d10a39542352' 
-           debug: 'true' 
-     
-    
-          
-    
-          
-        
+        with:
+          apiToken: '69440165985146e828a7b195404be2b10b0b273d'
+          suiteId: '72e6a1df-0e04-4c32-8db5-d10a39542352'
+          debug: 'true'
 
-      # Invio dati a un endpoint
       - name: Send Data to Webhook
-        
         run: |
-      
           curl -X POST "https://hook.eu1.make.com/i46n7r41xhkxw1wz4uikk6vevrsvbfev" \
           -H "Content-Type: application/json" \
-          -d '{
+          --data @- <<EOF
+          {
             "branch_name": "${{ env.BRANCH_NAME }}",
             "repo_name": "${{ env.REPO_NAME }}",
             "event_type": "${{ env.EVENT_TYPE }}",
@@ -73,8 +61,8 @@ jobs:
             "commit_sha": "${{ env.COMMIT_SHA }}",
             "bugbug_suite_run_id": "${{ steps.bugbug_test.outputs.suiteRunId }}",
             "bugbug_test_run_id": "${{ steps.bugbug_test.outputs.testRunId }}"
-          }'
-
+          }
+          EOF
 
       - name: Fail if BugBug Tests Failed
         if: steps.bugbug_test.outcome == 'failure'
