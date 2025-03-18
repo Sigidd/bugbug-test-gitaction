@@ -38,13 +38,14 @@ jobs:
       # Esegue BugBug test e salva gli ID di esecuzione
       - name: Run BugBug Tests
         continue-on-error: true  # Permette di continuare anche se fallisce
-        id: bugbug_test
-        run: |
+        id: run-bugbug-tests
+        uses: bugbug-io/bugbug-github-action@v1.2.1
+        with: 
          
-         bugbug_output=$(bugbug-io/bugbug-github-action@v1.2.1 \
-          --apiToken '69440165985146e828a7b195404be2b10b0b273d' \
-          --suiteId '72e6a1df-0e04-4c32-8db5-d10a39542352' \
-          --debug 'true' \
+        
+           apiToken: '69440165985146e828a7b195404be2b10b0b273d' 
+           suiteId: '72e6a1df-0e04-4c32-8db5-d10a39542352' 
+           debug: 'true' 
      
     
           
@@ -57,8 +58,8 @@ jobs:
         
         run: |
       
-          curl -X POST "https://hook.eu1.make.com/i46n7r41xhkxw1wz4uikk6vevrsvbfev" \
-          -H "Content-Type: application/json" \
+          curl -X POST "https://hook.eu1.make.com/i46n7r41xhkxw1wz4uikk6vevrsvbfev" 
+          -H "Content-Type: application/json" 
           -d '{
             "branch_name": "${{ env.BRANCH_NAME }}",
             "repo_name": "${{ env.REPO_NAME }}",
