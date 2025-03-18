@@ -51,7 +51,7 @@ jobs:
           EXIT_CODE=$?  # Store the exit code
           echo "BUGBUG_EXIT_CODE=$EXIT_CODE" >> $GITHUB_ENV  # Save it for later
     
-          exit 0  # Force success (for now)
+          
         
 
       # Invio dati a un endpoint
