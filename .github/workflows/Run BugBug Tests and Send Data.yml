@@ -1,5 +1,5 @@
 name: Run BugBug Tests and Send Data
-continue-on-error: true  # Permette al workflow di continuare anche se fallisce
+
 on:
   push:
     branches:
@@ -36,6 +36,7 @@ jobs:
       # Esegue BugBug test e salva gli ID di esecuzione
       - name: Run BugBug Tests
         id: bugbug_test
+        continue-on-error: true  # Permette al workflow di continuare anche se fallisce
         uses: bugbug-io/bugbug-github-action@v1.2.1
         with:
           apiToken: '69440165985146e828a7b195404be2b10b0b273d'
