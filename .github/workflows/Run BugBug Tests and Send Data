@@ -1,0 +1,74 @@
+name: Run BugBug Tests and Send Data
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  run-bugbug-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Get PR/Push Info
+        id: pr_info
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "PR_TITLE=$(jq -r .pull_request.title $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
+            echo "PR_NUMBER=$(jq -r .pull_request.number $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
+            echo "PR_AUTHOR=$(jq -r .pull_request.user.login $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
+            echo "PR_URL=$(jq -r .pull_request.html_url $GITHUB_EVENT_PATH)" >> $GITHUB_ENV
+            echo "EVENT_TYPE=pull_request" >> $GITHUB_ENV
+          else
+            echo "COMMIT_MESSAGE=$(git log -1 --pretty=%B)" >> $GITHUB_ENV
+            echo "COMMIT_AUTHOR=$(git log -1 --pretty=%an)" >> $GITHUB_ENV
+            echo "COMMIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+            echo "EVENT_TYPE=push" >> $GITHUB_ENV
+          fi
+
+      - name: Run BugBug Tests
+        id: bugbug_test
+        uses: bugbug-io/bugbug-github-action@v1.2.1
+        with:
+          apiToken: '69440165985146e828a7b195404be2b10b0b273d'
+          suiteId: '72e6a1df-0e04-4c32-8db5-d10a39542352'
+          debug: 'true'
+          variables: 'pr_title=${{ env.PR_TITLE }},commit_sha=${{ env.COMMIT_SHA }}'
+
+      - name: Get BugBug Test Status
+        id: bugbug_status
+        run: |
+          TEST_RUN_ID=${{ steps.bugbug_test.outputs.testRunId }}
+          API_RESPONSE=$(curl -s -X GET "https://api.bugbug.io/v1/test-runs/${TEST_RUN_ID}" \
+            -H "Authorization: Bearer ${{ secrets.BUGBUG_API_TOKEN }}")
+          
+          STATUS=$(echo $API_RESPONSE | jq -r '.status')
+          DEBUG_LOGS=$(echo $API_RESPONSE | jq -r '.logs')
+
+          echo "BUGBUG_STATUS=$STATUS" >> $GITHUB_ENV
+          echo "BUGBUG_DEBUG_LOGS=$DEBUG_LOGS" >> $GITHUB_ENV
+
+      - name: Send Data to Webhook
+        run: |
+          curl -X POST "https://your-endpoint.com/webhook" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "event_type": "${{ env.EVENT_TYPE }}",
+            "pr_title": "${{ env.PR_TITLE }}",
+            "pr_number": "${{ env.PR_NUMBER }}",
+            "pr_author": "${{ env.PR_AUTHOR }}",
+            "pr_url": "${{ env.PR_URL }}",
+            "commit_message": "${{ env.COMMIT_MESSAGE }}",
+            "commit_author": "${{ env.COMMIT_AUTHOR }}",
+            "commit_sha": "${{ env.COMMIT_SHA }}",
+            "bugbug_suite_run_id": "${{ steps.bugbug_test.outputs.suiteRunId }}",
+            "bugbug_test_run_id": "${{ steps.bugbug_test.outputs.testRunId }}",
+            "bugbug_status": "${{ env.BUGBUG_STATUS }}",
+            "bugbug_debug_logs": "${{ env.BUGBUG_DEBUG_LOGS }}"
+          }'
