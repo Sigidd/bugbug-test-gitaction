@@ -16,6 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Recupera info PR o Push
       - name: Get PR/Push Info
         id: pr_info
         run: |
@@ -32,6 +33,7 @@ jobs:
             echo "EVENT_TYPE=push" >> $GITHUB_ENV
           fi
 
+      # Esegue BugBug test e salva gli ID di esecuzione
       - name: Run BugBug Tests
         id: bugbug_test
         uses: bugbug-io/bugbug-github-action@v1.2.1
@@ -39,24 +41,12 @@ jobs:
           apiToken: '69440165985146e828a7b195404be2b10b0b273d'
           suiteId: '72e6a1df-0e04-4c32-8db5-d10a39542352'
           debug: 'true'
-          variables: 'pr_title=${{ env.PR_TITLE }},commit_sha=${{ env.COMMIT_SHA }}'
+        
 
-      - name: Get BugBug Test Status
-        id: bugbug_status
-        run: |
-          TEST_RUN_ID=${{ steps.bugbug_test.outputs.testRunId }}
-          API_RESPONSE=$(curl -s -X GET "https://api.bugbug.io/v1/test-runs/${TEST_RUN_ID}" \
-            -H "Authorization: Bearer ${{ secrets.BUGBUG_API_TOKEN }}")
-          
-          STATUS=$(echo $API_RESPONSE | jq -r '.status')
-          DEBUG_LOGS=$(echo $API_RESPONSE | jq -r '.logs')
-
-          echo "BUGBUG_STATUS=$STATUS" >> $GITHUB_ENV
-          echo "BUGBUG_DEBUG_LOGS=$DEBUG_LOGS" >> $GITHUB_ENV
-
+      # Invio dati a un endpoint
       - name: Send Data to Webhook
         run: |
-          curl -X POST "https://your-endpoint.com/webhook" \
+          curl -X POST "https://hook.eu1.make.com/i46n7r41xhkxw1wz4uikk6vevrsvbfev" \
           -H "Content-Type: application/json" \
           -d '{
             "event_type": "${{ env.EVENT_TYPE }}",
@@ -68,7 +58,5 @@ jobs:
             "commit_author": "${{ env.COMMIT_AUTHOR }}",
             "commit_sha": "${{ env.COMMIT_SHA }}",
             "bugbug_suite_run_id": "${{ steps.bugbug_test.outputs.suiteRunId }}",
-            "bugbug_test_run_id": "${{ steps.bugbug_test.outputs.testRunId }}",
-            "bugbug_status": "${{ env.BUGBUG_STATUS }}",
-            "bugbug_debug_logs": "${{ env.BUGBUG_DEBUG_LOGS }}"
+            "bugbug_test_run_id": "${{ steps.bugbug_test.outputs.testRunId }}"
           }'
