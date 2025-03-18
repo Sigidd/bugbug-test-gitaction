@@ -24,3 +24,5 @@
         with:
           apiToken: '69440165985146e828a7b195404be2b10b0b273d'
           suiteId: '72e6a1df-0e04-4c32-8db5-d10a39542352'
+          debug: 'true'
+        
