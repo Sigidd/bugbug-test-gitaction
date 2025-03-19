@@ -1,4 +1,4 @@
-name: Run BugBug Tests and Send Data
+name: Run BugBug Course Tests
 
 on:
   push:
