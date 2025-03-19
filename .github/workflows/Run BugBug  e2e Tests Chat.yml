@@ -1,4 +1,4 @@
-name: Run BugBug Tests and Send Data
+name: Run BugBug Chat Tests
 
 on:
   push:
