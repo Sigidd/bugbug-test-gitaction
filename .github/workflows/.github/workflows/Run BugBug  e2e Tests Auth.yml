@@ -1,1 +1,69 @@
+name: Run BugBug Tests and Send Data
 
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  run-bugbug-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Get PR/Push Info
+        id: pr_info
+        run: |
+          echo "BRANCH_NAME=${{ github.head_ref || github.ref_name }}" >> $GITHUB_ENV
+          echo "REPO_NAME=${{ github.repository }}" >> $GITHUB_ENV
+          echo "EVENT_TYPE=${{ github.event_name }}" >> $GITHUB_ENV
+
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "PR_TITLE=${{ github.event.pull_request.title }}" >> $GITHUB_ENV
+            echo "PR_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+            echo "PR_AUTHOR=${{ github.event.pull_request.user.login }}" >> $GITHUB_ENV
+            echo "PR_URL=${{ github.event.pull_request.html_url }}" >> $GITHUB_ENV
+          else
+            echo "COMMIT_MESSAGE=$(git log -1 --pretty=%B)" >> $GITHUB_ENV
+            echo "COMMIT_AUTHOR=$(git log -1 --pretty=%an)" >> $GITHUB_ENV
+            echo "COMMIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          fi
+
+      - name: Run BugBug Tests
+        id: bugbug_test
+        continue-on-error: true
+        uses: bugbug-io/bugbug-github-action@v1.2.1
+        with:
+          apiToken: '69440165985146e828a7b195404be2b10b0b273d'
+          suiteId: 'ae4e47fb-8be9-4257-99ca-50ce1cd561df'
+          debug: 'true'
+
+      - name: Send Data to Webhook
+        run: |
+          curl -X POST "https://hook.eu1.make.com/i46n7r41xhkxw1wz4uikk6vevrsvbfev" \
+          -H "Content-Type: application/json" \
+          --data @- <<EOF
+          {
+            "branch_name": "${{ env.BRANCH_NAME }}",
+            "repo_name": "${{ env.REPO_NAME }}",
+            "event_type": "${{ env.EVENT_TYPE }}",
+            "pr_title": "${{ env.PR_TITLE }}",
+            "pr_number": "${{ env.PR_NUMBER }}",
+            "pr_author": "${{ env.PR_AUTHOR }}",
+            "pr_url": "${{ env.PR_URL }}",
+            "commit_message": "${{ env.COMMIT_MESSAGE }}",
+            "commit_author": "${{ env.COMMIT_AUTHOR }}",
+            "commit_sha": "${{ env.COMMIT_SHA }}",
+            "bugbug_suite_run_id": "${{ steps.bugbug_test.outputs.suiteRunId }}",
+            "bugbug_test_run_id": "${{ steps.bugbug_test.outputs.testRunId }}"
+          }
+          EOF
+
+      - name: Fail if BugBug Tests Failed
+        if: steps.bugbug_test.outcome == 'failure'
+        run: exit 1
